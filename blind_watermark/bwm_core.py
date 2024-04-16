@@ -13,12 +13,13 @@ from .pool import AutoPool
 
 class WaterMarkCore:
     def __init__(self, password_img=1, mode='common', processes=None):
+        # Biến lưu môi khối 4x4
         self.block_shape = np.array([4, 4])
         self.password_img = password_img
-        self.d1, self.d2 = 36, 20  # d1/d2 越大鲁棒性越强,但输出图片的失真越大
+        self.d1, self.d2 = 36, 20  # d1/d2 càng lớn thì độ chắc chắn càng mạnh nhưng độ méo của hình ảnh đầu ra càng lớn.
 
         # init data
-        self.img, self.img_YUV = None, None  # self.img 是原图，self.img_YUV 对像素做了加白偶数化
+        self.img, self.img_YUV = None, None  # self.img là ảnh gốc, self.img_YUV đã thêm số trắng và số chẵn vào pixel
         self.ca, self.hvd, = [np.array([])] * 3, [np.array([])] * 3 # Kết quả dct cho từng kênh
         self.ca_block = [np.array([])] * 3  # 每个 channel 存一个四维 array，代表四维分块后的结果
         self.ca_part = [np.array([])] * 3  # 四维分块后，有时因不整除而少一部分，self.ca_part 是少这一部分的 self.ca
@@ -33,7 +34,7 @@ class WaterMarkCore:
         self.block_num = self.ca_block_shape[0] * self.ca_block_shape[1]
         assert self.wm_size < self.block_num, IndexError(
             '最多可嵌入{}kb信息，多于水印的{}kb信息，溢出'.format(self.block_num / 1000, self.wm_size / 1000))
-        # self.part_shape 是取整后的ca二维大小,用于嵌入时忽略右边和下面对不齐的细条部分。
+        # self.part_shape là kích thước hai chiều được làm tròn của ca, được sử dụng để bỏ qua các dải mỏng bị lệch ở bên phải và bên dưới khi nhúng.
         self.part_shape = self.ca_block_shape[:2] * self.block_shape
         self.block_index = [(i, j) for i in range(self.ca_block_shape[0]) for j in range(self.ca_block_shape[1])]
 
@@ -62,7 +63,7 @@ class WaterMarkCore:
 
         for channel in range(3):
             self.ca[channel], self.hvd[channel] = dwt2(self.img_YUV[:, :, channel], 'haar')
-            # 转为4维度
+            # Chuyển đổi sang 4 chiều
             self.ca_block[channel] = np.lib.stride_tricks.as_strided(self.ca[channel].astype(np.float32),
                                                                      self.ca_block_shape, strides)
 

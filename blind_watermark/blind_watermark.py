@@ -68,6 +68,7 @@ class WaterMark:
         :return:
         '''
         # Gọi phương thức embed từ đối tượng self.bwm_core. Đây là một phương thức trong self.bwm_core được sử dụng để nhúng dữ liệu watermark vào hình ảnh.
+        # Chia thành các khối 4x4
         embed_img = self.bwm_core.embed()
         if filename is not None:
             if compression_ratio is None:
